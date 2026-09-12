@@ -1,0 +1,4 @@
+Django==6.1.1
+djangorestframework==3.18.1
+polyline==2.0.4
+requests==2.34.2

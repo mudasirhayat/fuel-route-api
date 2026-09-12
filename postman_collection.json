@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "Fuel Route API",
+    "description": "Plan a driving route between two US locations with cost-optimal fuel stops (500 mi tank range, 10 mpg).\n\nStart the server first: python manage.py runserver\n\nDemo order:\n1. 'NY to LA' twice (first call is cold ~3-4s, second is cached ~100ms)\n2. Open the map_url from the response in a browser\n3. Optionally show the other requests: short trip ($0), coordinates input, POST body, and the error cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" }
+  ],
+  "item": [
+    {
+      "name": "1. NY to LA (main demo)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/route/?start=New York, NY&finish=Los Angeles, CA",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            { "key": "start", "value": "New York, NY" },
+            { "key": "finish", "value": "Los Angeles, CA" }
+          ]
+        },
+        "description": "Cross-country route: ~2,794 miles, 17 optimal fuel stops, ~$693 total. Send twice: the second response is served from cache in ~100 ms with zero external calls. Open the map_url from the response in a browser to show the interactive map."
+      }
+    },
+    {
+      "name": "2. Miami to Seattle (second long route)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/route/?start=Miami, FL&finish=Seattle, WA",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            { "key": "start", "value": "Miami, FL" },
+            { "key": "finish", "value": "Seattle, WA" }
+          ]
+        },
+        "description": "~3,300 miles, ~21 stops. Shows the planner works on any corridor."
+      }
+    },
+    {
+      "name": "3. Short trip, no stops needed",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/route/?start=Dallas, TX&finish=Houston, TX",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            { "key": "start", "value": "Dallas, TX" },
+            { "key": "finish", "value": "Houston, TX" }
+          ]
+        },
+        "description": "~238 miles, under the 500-mile tank range: zero stops, $0 purchased (tank starts full). trip_fuel_burned_gallons is still reported."
+      }
+    },
+    {
+      "name": "4. Coordinates input (skips geocoding)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/route/?start=39.7392,-104.9903&finish=41.8781,-87.6298",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            { "key": "start", "value": "39.7392,-104.9903" },
+            { "key": "finish", "value": "41.8781,-87.6298" }
+          ]
+        },
+        "description": "Denver to Chicago as raw lat,lon. No Nominatim calls at all: only the single OSRM routing call."
+      }
+    },
+    {
+      "name": "5. POST with JSON body",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Boston, MA\",\n  \"finish\": \"Denver, CO\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "route", ""]
+        },
+        "description": "Same endpoint accepts a JSON body."
+      }
+    },
+    {
+      "name": "6. Error: missing parameter (400)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/route/?start=Denver, CO",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            { "key": "start", "value": "Denver, CO" }
+          ]
+        },
+        "description": "Validation: finish is required, returns HTTP 400 with a helpful message."
+      }
+    },
+    {
+      "name": "7. Error: location outside the USA (400)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/route/?start=Boston, MA&finish=Paris, France",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "route", ""],
+          "query": [
+            { "key": "start", "value": "Boston, MA" },
+            { "key": "finish", "value": "Paris, France" }
+          ]
+        },
+        "description": "Geocoding is restricted to the USA, so non-US locations are rejected cleanly."
+      }
+    }
+  ]
+}
